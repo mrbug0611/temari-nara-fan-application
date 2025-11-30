@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 // A schema defines the structure and data types of the documents within a MongoDB collection
-const JutsuSchema = new mongoose.Schema({
+const jutsuSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -94,3 +94,12 @@ const JutsuSchema = new mongoose.Schema({
     
 
 }); 
+
+// Indexes improve query performance on frequently searched fields
+// checks only the field mentioned in the index instead of scanning the entire jutsu
+jutsuSchema.index({ name: 1 });
+jutsuSchema.index({ type: 1});
+jutsuSchema.index({ rank: 1 });
+jutsuSchema.index({isSignature: 1});
+
+module.exports = mongoose.model('Jutsu', jutsuSchema);
