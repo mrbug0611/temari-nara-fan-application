@@ -9,3 +9,6 @@ require('dotenv').config();
 
 // create express app
 const app = express();
+
+// import routes
+const jutsuRoutes = require('./routes/jutsu.routes');
