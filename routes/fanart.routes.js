@@ -115,3 +115,115 @@ router.post('/', authenticate, async (req, res) => {
         res.status(400).json({ error: error.message});
     }   
 });
+
+// like / unlike fan art 
+router.post('/:id/like', authenticate, async (req, res) => {
+    try {
+        const fanArt = await FanArt.findById(req.params.id);
+        if (!fanArt) {
+            return res.status(404).json({ error: 'Fan Art not found' });
+        }
+        const hasLiked = fanArt.likedBy.includes(req.user.id);
+
+        if (hasLiked) {
+            fanArt.likedBy = fanArt.likedBy.filter(
+                id => id.toString() !== req.user.id.toString());
+            fanArt.likes = Math.max(0, fanArt.likes - 1);
+
+        }
+
+        else {
+            fanArt.likedBy.push(req.user.id);
+            fanArt.likes += 1;
+        }
+
+        await fanArt.save();
+        res.json({likes: fanArt.likes, hasLiked: !hasLiked});
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message});
+    }
+});
+
+// add a comment to fan art
+router.post('/:id/comment', authenticate, async (req, res) => {
+    try {
+        const fanArt = await FanArt.findById(req.params.id);
+        if (!fanArt) { 
+            return res.status(404).json({ error: 'Fan Art not found' });
+        }
+
+        fanArt.commnents.push( {
+            userId: req.user.id,
+            username: req.user.username,
+            text: req.body.text,
+        });
+
+        await fanArt.save();
+        res.status(201).json(fanArt.commnents[fanArt.comments.length - 1]);
+    }
+    catch (error) {
+        res.status(400).json({ error: error.message});
+    }
+});
+
+// approve fan art (moderator only)
+// patch only used to update specific fields
+// put updats the entire resource
+router.patch('/:id/approve', authenticate, isModerator, async (req, res) => {
+    try {
+        const fanArt = await FanArt.findByIdAndUpdate(
+            req.params.id, 
+            { approved: true },
+            { new: true }
+        );
+        if (!fanArt) {
+            return res.status(404).json({ error: 'Fan Art not found' });
+        }
+        res.json(fanArt);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message});
+    }
+});
+
+// toggled featured status (moderator only)
+// Toggle featured (Moderator only)
+router.patch('/:id/feature', authenticate, isModerator, async (req, res) => {
+  try {
+    const fanArt = await FanArt.findById(req.params.id);
+    if (!fanArt) {
+      return res.status(404).json({ error: 'Fan art not found' });
+    }
+    fanArt.featured = !fanArt.featured;
+    await fanArt.save();
+    res.json(fanArt);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// delete fan art
+router.delete('/:id', authenticate, async (req, res) => {
+    try {
+        const fanArt = await FanArt.findByIdAndDelete(req.params.id);
+        if (!fanArt) {
+            return res.status(404).json({ error: 'Fan Art not found' });
+        }
+
+        // only allow artist or moderator or admin to delete
+        if (fanArt.artist.userId.toString() !== req.user.id.toString() &&
+            !req.user.isModerator &&
+            !req.user.isAdmin) {
+                return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        await fanArt.deleteOne();
+        res.json({ message: 'Fan Art deleted successfully' });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message});
+    }
+});
+
+module.exports = router;
