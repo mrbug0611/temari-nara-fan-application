@@ -12,3 +12,4 @@ const app = express();
 
 // import routes
 const jutsuRoutes = require('./routes/jutsu.routes');
+const timelineRoutes = require('./routes/timeline.routes');
