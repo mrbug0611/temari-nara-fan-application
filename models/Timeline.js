@@ -33,7 +33,7 @@ const timelineEventSchema = new mongoose.Schema({
 
     category: {
         type: String,
-        enum: ['Battle', 'Character Development', 'Relationship', 'Personal Achievement', 'Mission', 'Diplomatic Event'],
+        enum: ['Battle', 'Character Development', 'Relationship', 'Personal Achievement', 'Mission', 'Diplomatic'],
         required: true
     }, 
 

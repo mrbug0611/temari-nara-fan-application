@@ -275,6 +275,55 @@ router.patch('/:id/pin', authenticate, isModerator, async (req, res) => {
     }
 });
 
+// lock/unlock post (moderator only)
+router.patch('/:id/lock', authenticate, isModerator, async (req, res) => {
+    try {
+        const post = await StrategistPost.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({error: 'Post not found'});
+        }
+        post.locked = !post.locked;
+        await post.save();
+        res.json({locked: post.locked});
+    } catch (error) {
+        res.status(500).json({error: error.message});
+    }
+});
+
+// feature/unfeature post (moderator only)
+router.patch('/:id/feature', authenticate, isModerator, async (req, res) => {
+    try {
+        const post = await StrategistPost.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({error: 'Post not found'});
+        }
+        post.featured = !post.featured;
+        await post.save();
+        res.json({featured: post.featured});
+    }
+    catch (error) {
+        res.status(500).json({error: error.message});
+    }   
+});
+
+// delete post  
+router.delete('/:id', authenticate, async (req, res) => {
+    try {
+        const post = await StrategistPost.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({error: 'Post not found'});
+        }
+        if (post.author.userId.toString() !== req.user.id.toString() && !req.user.isModerator && !req.user.isAdmin) {
+            return res.status(403).json({error: 'Unauthorized'});
+        }
+        await post.deleteOne();
+        res.json({message: 'Post deleted successfully'});
+    }
+    catch (error) {
+        res.status(500).json({error: error.message});
+    }
+});
+
 module.exports = router;
 
 

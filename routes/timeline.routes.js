@@ -2,7 +2,7 @@
 const express = require('express');
 // Router is a mini application that handles HTTP requests
 const router = express.Router();
-const TimelineEvent = require('../models/timelineEvent.model');
+const TimelineEvent = require('../models/Timeline');
 const { authenticate, isAdmin } = require('../middleware/auth');
 
 // Get all timeline events with filtering and sorting

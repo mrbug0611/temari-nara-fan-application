@@ -31,9 +31,11 @@ const userSchema = new mongoose.Schema({
     }, 
 
     profile: {
-        type: String,
-        default: 'default-avatar.png',
-    
+        avatar: {
+            type: String,
+            default: 'default-avatar.png',
+
+        },    
 
         bio: {
             type: String,
@@ -150,18 +152,13 @@ const userSchema = new mongoose.Schema({
 
 
 // Hash password before saving user document
-userSchema.pre('save', async function(next) {
-    if (this.isModified('password')) {
-        return next();
+userSchema.pre('save', async function() {
+    if (!this.isModified('password')) {
+        return;
     }
 
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next(); // we're done with hashing, move to the next middleware function in the chain 
-    } catch (error) {
-        next(error);
-    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
 }); 
 
 // Method to compare entered password with hashed password in DB

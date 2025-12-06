@@ -36,7 +36,7 @@ const jutsuSchema = new mongoose.Schema({
 
     classification: {
         type: String,
-        enum: ['Offensive', 'Defensive', 'Supplamentary'],
+        enum: ['Offensive', 'Defensive', 'Supplementary'],
         required: true,
     },
 

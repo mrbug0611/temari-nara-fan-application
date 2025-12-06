@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FanArt = require('../models/FanArt');
-const {authenticate, isModerator} = require('../middleware/auth.middleware');
+const { authenticate, isModerator } = require('../middleware/auth');
 
 // Route to get all approved fan art with filtering 
 router.get('/', async (req, res) => {
