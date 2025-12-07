@@ -1,0 +1,262 @@
+# .coderabbit.yaml - CodeRabbit AI Code Review Configuration
+# For Temari Naruto Fan Application (MERN Stack)
+
+# Language and tone settings
+language: en-US
+tone_instructions: "Be constructive, educational, and encouraging. Use Naruto-themed references when appropriate (e.g., 'This code has strong chakra flow' or 'Consider this wind-style refactoring'). Focus on teaching best practices while maintaining a friendly tone."
+
+# Review settings
+reviews:
+  # Enable/disable auto-reviews
+  auto_review:
+    enabled: true
+    drafts: false # Don't review draft PRs
+    
+  # What to review
+  path_filters:
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.json"
+    - "**/*.yaml"
+    - "**/*.yml"
+    
+  # Exclude from reviews
+  path_ignore:
+    - "node_modules/**"
+    - "dist/**"
+    - "build/**"
+    - "coverage/**"
+    - "*.min.js"
+    - "package-lock.json"
+    - "yarn.lock"
+    - ".env*"
+    
+  # Review profile
+  profile: "assertive" # Options: chill, assertive, aggressive
+  
+  # Request changes vs comment
+  request_changes_workflow: false # Use comments instead of blocking
+  
+  # High-level summary
+  high_level_summary: true
+  
+  # Poem (fun summary in verse)
+  poem: true # Why not? Naruto-themed code poems!
+  
+  # Review specific aspects
+  review_status: true
+  collapse_walkthrough: false # Keep walkthroughs expanded
+  
+  # Tool usage
+  tools:
+    # GitHub Actions check
+    github-actions:
+      enabled: true
+      
+    # ESLint integration
+    eslint:
+      enabled: true
+      
+    # Biome (formatter/linter)
+    biome:
+      enabled: false # Using ESLint instead
+
+# Chat settings
+chat:
+  # Enable AI chat on PRs
+  auto_reply: true
+
+# Knowledge base - Project-specific context
+knowledge_base:
+  - "This is a MERN stack application (MongoDB, Express, React, Node.js)"
+  - "Backend uses Mongoose for MongoDB ODM with Mongoose 8.x syntax"
+  - "Frontend uses React 18 with Vite as the build tool"
+  - "Styling is done with Tailwind CSS (utility-first approach)"
+  - "Animations use GSAP (GreenSock Animation Platform)"
+  - "Authentication uses JWT tokens with bcryptjs for password hashing"
+  - "API follows RESTful conventions with /api prefix"
+  - "Theme: Naruto anime fan site focused on Temari character"
+  - "Wind/weather effects are core features - real-time weather API integration"
+  - "Never use localStorage/sessionStorage in artifacts - use React state instead"
+  - "MongoDB connection uses modern syntax (no useNewUrlParser, useUnifiedTopology)"
+  - "Password hashing uses async/await without next() callbacks in Mongoose middleware"
+
+# Custom instructions for specific files
+path_instructions:
+  - path: "models/**/*.js"
+    instructions: |
+      - Ensure Mongoose schemas use proper types and validation
+      - Check for proper indexes on frequently queried fields
+      - Verify that unique constraints are properly set
+      - Look for proper use of refs for population
+      - Ensure middleware uses async/await without next() callbacks
+      - Check for proper error handling in schema methods
+      
+  - path: "routes/**/*.js"
+    instructions: |
+      - Verify proper authentication middleware usage
+      - Check for input validation
+      - Ensure proper error handling with try-catch
+      - Verify HTTP status codes are appropriate
+      - Check that pagination is implemented for list endpoints
+      - Ensure proper use of query parameters for filtering
+      
+  - path: "middleware/**/*.js"
+    instructions: |
+      - Verify JWT token validation is secure
+      - Check for proper error responses
+      - Ensure middleware doesn't leak sensitive information
+      - Verify role-based access control is correctly implemented
+      
+  - path: "scripts/**/*.js"
+    instructions: |
+      - Check for proper database connection handling
+      - Ensure scripts clean up connections on exit
+      - Verify error handling with appropriate exit codes
+      - Check that sample data is comprehensive and valid
+      
+  - path: "src/components/**/*.{jsx,tsx}"
+    instructions: |
+      - Verify proper React hooks usage (no hooks in conditionals)
+      - Check for accessibility (ARIA labels, semantic HTML)
+      - Ensure components are properly typed (PropTypes or TypeScript)
+      - Look for performance optimizations (useMemo, useCallback where needed)
+      - Verify animations don't cause performance issues
+      - Check for proper error boundaries
+      
+  - path: "src/contexts/**/*.{jsx,tsx}"
+    instructions: |
+      - Verify context providers don't cause unnecessary re-renders
+      - Check for proper error handling in context operations
+      - Ensure context values are memoized when appropriate
+      - Verify async operations are properly handled
+      
+  - path: "src/pages/**/*.{jsx,tsx}"
+    instructions: |
+      - Check for proper loading states
+      - Verify error handling and error state display
+      - Ensure proper data fetching patterns
+      - Check for proper cleanup in useEffect
+      - Verify responsive design considerations
+      
+  - path: "**/*.css"
+    instructions: |
+      - Prefer Tailwind utility classes over custom CSS
+      - Check for proper responsive design
+      - Ensure animations are performant (use transform/opacity)
+      - Verify dark mode support if applicable
+
+# Security-focused rules
+security:
+  - "Flag any use of eval() or Function() constructor"
+  - "Warn about console.log in production code"
+  - "Check for exposed API keys or secrets"
+  - "Verify password hashing uses bcrypt with proper salt rounds"
+  - "Check JWT secret is not hardcoded"
+  - "Ensure environment variables are used for sensitive data"
+  - "Verify CORS is properly configured"
+  - "Check for SQL/NoSQL injection vulnerabilities"
+  - "Ensure rate limiting is implemented on auth routes"
+  - "Verify input sanitization and validation"
+
+# Performance rules
+performance:
+  - "Check for N+1 query problems in database operations"
+  - "Verify proper indexes exist for frequently queried fields"
+  - "Look for unnecessary re-renders in React components"
+  - "Check for proper memoization of expensive computations"
+  - "Verify images are optimized and lazy-loaded"
+  - "Check for proper code splitting in frontend"
+  - "Ensure animations use GPU-accelerated properties"
+  - "Look for memory leaks in event listeners and subscriptions"
+
+# Code style rules
+style:
+  - "Prefer async/await over .then() chains"
+  - "Use const by default, let when necessary, never var"
+  - "Prefer arrow functions for callbacks"
+  - "Use destructuring for object and array access"
+  - "Prefer template literals over string concatenation"
+  - "Use meaningful variable names (no single letters except in loops)"
+  - "Keep functions small and focused (single responsibility)"
+  - "Add JSDoc comments for public functions"
+  - "Use early returns to reduce nesting"
+  - "Prefer functional programming patterns when appropriate"
+
+# Testing rules (for when tests are added)
+testing:
+  - "Check if new features have corresponding tests"
+  - "Verify test descriptions are clear and descriptive"
+  - "Look for proper test data cleanup"
+  - "Check for proper mocking of external dependencies"
+  - "Ensure async tests properly handle promises"
+
+# Documentation rules
+documentation:
+  - "Check if complex logic has explanatory comments"
+  - "Verify API endpoints are documented"
+  - "Check if README is updated for new features"
+  - "Ensure environment variables are documented in .env.example"
+  - "Verify new dependencies are justified"
+
+# Git commit rules
+commits:
+  - "Encourage descriptive commit messages"
+  - "Check for proper commit message format (type: description)"
+  - "Verify commits are atomic (one logical change per commit)"
+
+# Labels to apply automatically
+labels:
+  - name: "security"
+    description: "Security-related changes"
+    color: "d73a4a"
+    conditions:
+      - "Changes to authentication or authorization"
+      - "Changes to password handling"
+      - "Changes to JWT token handling"
+      
+  - name: "performance"
+    description: "Performance improvements"
+    color: "0e8a16"
+    conditions:
+      - "Database query optimizations"
+      - "React performance optimizations"
+      - "Animation performance improvements"
+      
+  - name: "backend"
+    description: "Backend changes"
+    color: "1d76db"
+    conditions:
+      - "Changes to models, routes, or middleware"
+      
+  - name: "frontend"
+    description: "Frontend changes"
+    color: "fbca04"
+    conditions:
+      - "Changes to React components or pages"
+      
+  - name: "database"
+    description: "Database schema or migration changes"
+    color: "5319e7"
+    conditions:
+      - "Changes to Mongoose models"
+      
+  - name: "dependencies"
+    description: "Dependency updates"
+    color: "0366d6"
+    conditions:
+      - "Changes to package.json"
+      
+  - name: "documentation"
+    description: "Documentation updates"
+    color: "0075ca"
+    conditions:
+      - "Changes to README or comments"
+
+# Early access features
+early_access: true
+
+# Enable auto-summarization
+enable_free_tier: true
