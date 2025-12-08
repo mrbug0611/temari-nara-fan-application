@@ -20,8 +20,8 @@ const authenticate = async (req, res, next) => {
 
         const decoded = jwt.verify(
             token, // jwt token to verify 
-            process.env.JWT_SECRET || 'temari-wind-release-secret' // secret key used to verify token
-        )
+            process.env.JWT_SECRET // secret key used to verify token
+        );
 
         const user = await User.findById(decoded.id);
 
@@ -30,7 +30,10 @@ const authenticate = async (req, res, next) => {
         }
 
         if (user.isBanned) {
-            return res.status(403).json({ error: 'Account is Banned' });
+            return res.status(403).json({ error: 'Account is Banned',
+                banned: true,
+                banReason: user.banReason || 'No reason provided',
+             });
         }
 
         req.user = user; // attach user to request object for downstream use

@@ -110,7 +110,7 @@ const fanArtSchema = new mongoose.Schema({
 });
 
 // indexes for efficient querying
-fanArtSchema.index({approved: 1, creatdAt: -1}); 
+fanArtSchema.index({approved: 1, createdAt: -1}); 
 fanArtSchema.index({style: 1});
 fanArtSchema.index({era: 1});
 fanArtSchema.index({featured: 1});

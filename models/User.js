@@ -21,7 +21,6 @@ const userSchema = new mongoose.Schema({
         trim: true,
         // converts email to lowercase before saving
         lowercase: true,
-        trim: true,
     }, 
 
     password: {
@@ -42,7 +41,7 @@ const userSchema = new mongoose.Schema({
             maxlength: 500,
         },
 
-        favoriteCharactr: String, 
+        favoriteCharacter: String, 
         favoriteJutsu: String, 
 
         rank: {
@@ -146,6 +145,20 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+
+    banReason: {
+        type: String,
+        maxlength: 500,
+    },
+
+    bannedAt: {
+        type: Date,
+    }, 
+
+    bannedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }
 }, { timestamps: true
 });
 
@@ -166,8 +179,5 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Indexes for faster search on username and email
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
 
 module.exports = mongoose.model('User', userSchema);

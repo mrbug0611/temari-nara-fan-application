@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, isAdmin, isModerator } = require('../middleware/auth');
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -34,7 +34,7 @@ router.post('/register', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || 'temari-wind-release-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || 'temari-wind-release-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -250,6 +250,228 @@ router.get('/:username/stats', async (req, res) => {
     }
 
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ban a user (admin only)
+router.post('/:id/ban', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+
+    const userId = req.params.id; 
+    
+    // prevent admin from banning themselves
+    if (userId === req.user.id.toString()) {
+      return res.status(400).json({ error: 'Cannot ban yourself' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // prevent banning other admins
+    if (user.isAdmin) {
+      return res.status(403).json({ error: 'Cannot ban another admin' });
+    }
+
+    // check if user is already banned
+    if (user.isBanned) {
+      return res.status(400).json({ error: 'User is already banned' });
+    }
+
+
+    user.isBanned = true;
+    user.banReason = reason || 'Violation of terms of service';
+    user.bannedAt = new Date();
+    user.bannedBy = req.user.id;
+    await user.save();
+
+    res.json({ message: 'User has been banned', 
+      id: user.id, 
+      username: user.username, 
+      email: user.email, 
+      isBanned: user.isBanned,
+      banReason: user.banReason,
+      bannedAt: user.bannedAt
+
+     });
+  }
+  catch (error) {
+    res.status(500).json({ error: error.message
+    });
+  }
+});
+
+// unban a user (admin only)
+router.post('/:id/unban', authenticate, isAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (!user.isBanned) {
+      return res.status(400).json({ error: 'User is not banned' });
+    }
+    user.isBanned = false;
+    user.banReason = undefined;
+    user.bannedAt = undefined;
+    user.bannedBy = undefined;
+    await user.save();
+    res.json({ message: 'User has been unbanned', 
+      id: user.id, 
+      username: user.username,
+      email: user.email,
+      isBanned: user.isBanned 
+    });
+  }
+  catch (error) {
+    res.status(500).json({ error: error.message });
+  } 
+});
+
+
+// get a ban history of a user (admin/moderator only)
+router.get('/:id/ban-info', authenticate, isModerator, async (req, res) => {
+  try {
+
+    const user = await User.findById(req.params.id)
+      .select('username email isBanned banReason bannedAt bannedBy')
+      .populate('bannedBy', 'username email');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+      username: user.username,
+      email: user.email,
+      isBanned: user.isBanned,
+      banInfo: user.isBanned ? {
+        reason: user.banReason,
+        bannedAt: user.bannedAt,
+        bannedBy: user.bannedBy
+      } : null
+     });
+  } 
+  catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// update ban reason (admin only)
+router.put('/:id/ban-reason', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const userId = req.params.id;
+
+    if (!reason) {
+      return res.status(400).json({ error: 'Ban reason is required' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (!user.isBanned) {
+      return res.status(400).json({ error: 'User is not banned' });
+    }
+    user.banReason = reason;
+    await user.save();
+    res.json({ message: 'Ban reason updated', 
+      user: {
+        id: user.id, 
+        username: user.username, 
+        banReason: user.banReason
+      }
+    });
+  }
+  catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Promote user to admin (Super Admin only)
+router.post('/:id/promote', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { role } = req.body; // 'admin' or 'moderator'
+    const userId = req.params.id;
+
+    // Only allow if requester is already an admin
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Only admins can promote users' });
+    }
+
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Promote user
+    if (role === 'admin') {
+      user.isAdmin = true;
+      user.isModerator = true; // Admins are also moderators
+    } else if (role === 'moderator') {
+      user.isModerator = true;
+    } else {
+      return res.status(400).json({ error: 'Invalid role. Use "admin" or "moderator"' });
+    }
+
+    await user.save();
+
+    res.json({
+      message: `User promoted to ${role} successfully`,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isModerator: user.isModerator
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Demote user (Super Admin only)
+router.post('/:id/demote', authenticate, isAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Prevent self-demotion
+    if (userId === req.user.id.toString()) {
+      return res.status(400).json({ error: 'You cannot demote yourself' });
+    }
+
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Demote user
+    user.isAdmin = false;
+    user.isModerator = false;
+
+    await user.save();
+
+    res.json({
+      message: 'User demoted successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isModerator: user.isModerator
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
