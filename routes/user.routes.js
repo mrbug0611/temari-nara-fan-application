@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { authenticate, isAdmin, isModerator } = require('../middleware/auth');
 
-// Register new user
+// Register new user with cookies 
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -38,8 +38,14 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // set http-only cookie 
+    res.cookie('token', token, {
+      httpOnly: true, // accessible only by web server not JavaScript
+      secure: process.env.NODE_ENV === 'production', // https only in production
+      sameSite: 'strict', // CSRF protection
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
     res.status(201).json({
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -53,7 +59,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login user
+// Login user with cookies 
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -86,8 +92,14 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
     res.json({
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -101,6 +113,16 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// logout user clear cookie
+router.post('/logout', authenticate, (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  res.json({ message: 'Logged out successfully' });
 });
 
 // Get current user profile

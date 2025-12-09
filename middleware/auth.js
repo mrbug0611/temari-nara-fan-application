@@ -6,10 +6,8 @@ const User = require('../models/user');
 // Authenticate JWT token middleware
 const authenticate = async (req, res, next) => {
     try {
-        // Extract token from Authorization header
-        // req.header('Authorization') gets authorization header from request
-        // then we remove 'Bearer ' prefix to get the actual token
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+   
+        const token = req.cookies.token; // get token from cookies
 
         if (!token) {
             return res.status(401).json({ error: 'Authentication Required' });

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const CookieParser = require('cookie-parser');
 require('dotenv').config();
 
 // create express app
@@ -23,10 +24,13 @@ app.use(helmet()); // security headers (protection against common vulnerabilitie
 
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000', // allows only request from this origin
-    credentials: true // allow cookies to be sent
+    credentials: true, // allow cookies to be sent
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // allowed headers
 })); // enable CORS (cross-origin resource sharing)
+; // enable CORS (cross-origin resource sharing)
 // allows requests from frontend url 
-
+app.use(CookieParser()); // parse cookies from request headers
 app.use(express.json({limit: '10mb'})); // parse JSON request bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // parse URL-encoded request bodies
 
