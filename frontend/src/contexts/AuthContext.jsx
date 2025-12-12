@@ -27,17 +27,12 @@ export const AuthProvider = ({ children }) => {
     // loading state to check if user data is being fetched
     const [loading, setLoading] = useState(true);
 
-    // set token in axios headers
+     // NO TOKEN STATE - cookies handle authentication automatically
+
+    // Fetch user on mount
     useEffect(() => {
-        if (token) {
-            // set the Authorization header with the token
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            // fetch user data
-            fetchUser();
-        } else {
-            setLoading(false);
-        }
-    }, [token]);
+        fetchUser();
+    }, []);
 
 
     const fetchUser = async () => {
@@ -105,7 +100,6 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user, 
-        token, 
         loading, 
         login, 
         register, 

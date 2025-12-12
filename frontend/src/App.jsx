@@ -5,9 +5,17 @@ import { useState, useEffect } from 'react'
 import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { WeatherProvider } from './contexts/WeatherContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+
+
+
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+
+// layout components
+import Navigation from './components/layout/Navigation';
+
 
 function App() {
   const [count, setCount] = useState(0)
