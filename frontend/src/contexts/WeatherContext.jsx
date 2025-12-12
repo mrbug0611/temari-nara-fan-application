@@ -2,102 +2,107 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-const WeatherContext = createContext(); 
+const WeatherContext = createContext();
 
 export const useWeather = () => {
-    const context = useContext(WeatherContext); 
-    if (!context) {
-        throw new Error('useWeather must be used within a WeatherProvider');
-    }
-    return context;
-}
+  const context = useContext(WeatherContext);
+  if (!context) {
+    throw new Error('useWeather must be used within WeatherProvider');
+  }
+  return context;
+};
 
 export const WeatherProvider = ({ children }) => {
-    const [weather, setWeather] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        fetchWeather(); 
-    }, [])
+  useEffect(() => {
+    fetchWeather();
+  }, []);
 
-const fetchWeather = async () => {
-    // get users location 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
+  const fetchWeather = async () => {
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
             const { latitude, longitude } = position.coords;
             
             try {
-                const response = await axios.get('/weather', {
-                    params: { lat: latitude, lon: longitude }
-                });
+              // FIX: Add /api prefix to the URL
+              const response = await axios.get('/api/weather', {
+                params: { lat: latitude, lon: longitude }
+              });
+              
+              //  FIX: Validate that response is actually weather data
+              if (response.data && typeof response.data === 'object' && response.data.windSpeed !== undefined) {
                 setWeather(response.data);
                 setError(null);
-            } 
-
-            catch (err) {
-                console.error('Weather fetch error:', err);
-                setError('Failed to fetch weather data');
-                setDefaultWeather(); 
+              } else {
+                setDefaultWeather();
+              }
+            } catch (err) {
+              setError(err); 
+              setDefaultWeather();
+            } finally {
+              setLoading(false);
             }
-
-            finally {
-                setLoading(false);
-            }
-
-        }, 
-    () => {
-        setError('Location access denied');
-        setDefaultWeather(); 
+          },
+          (err) => {
+            setDefaultWeather();
+            setLoading(false);
+          }
+        );
+      } else {
+        setDefaultWeather();
         setLoading(false);
-    });
-    } else {
-        setError('Geolocation not supported');
-        setDefaultWeather(); 
-        setLoading(false);
+      }
+    } catch (err) {
+      setError(err); 
+      setDefaultWeather();
+      setLoading(false);
     }
-};  
+  };
 
-    const setDefaultWeather = () => {
-        setWeather({
-            type: 'gentle-breeze', 
-            windSpeed: 5, 
-            windDirection: 45, 
-            temperature: 20, 
-            description: 'clear sky',
-            location: {name: 'Unknown', city: ''}
-        });
-    }; 
-
-    const getWindIntensity = () => {
-        if (!weather) {
-            return 0.5; 
-        }
-
-        return Math.min(weather.windSpeed / 20, 1); // normalize to 0-1 
-    }; 
-
-    const getWindEffect = () => {
-        if (!weather) {
-            return 'calm'; 
-        }
-
-        return weather.type; 
+  const setDefaultWeather = () => {
+    const defaultData = {
+      type: 'gentle-breeze',
+      windSpeed: 5,
+      windDirection: 45,
+      temperature: 20,
+      description: 'clear sky',
+      location: { name: 'Unknown', country: '' }
     };
+    setWeather(defaultData);
+    setLoading(false);
+  };
 
-    const value = {
-        weather, 
-        loading, 
-        error, 
-        fetchWeather, 
-        getWindIntensity, 
-        getWindEffect
+  const getWindIntensity = () => {
+    if (!weather) {
+      return 0.5;
+    }
+    return Math.min(weather.windSpeed / 20, 1);
+  };
 
-    };
+  const getWindEffect = () => {
+    if (!weather) {
+      return 'calm';
+    }
+    return weather.type;
+  };
 
-    return (
-        <WeatherContext.Provider value={value}>
-            {children}
-        </WeatherContext.Provider>
-    );
+  const value = {
+    weather,
+    loading,
+    error,
+    fetchWeather,
+    getWindIntensity,
+    getWindEffect
+  };
+
+  return (
+    <WeatherContext.Provider value={value}>
+      {children}
+    </WeatherContext.Provider>
+  );
 };
