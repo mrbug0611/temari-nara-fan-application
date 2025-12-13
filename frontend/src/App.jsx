@@ -16,6 +16,7 @@ import './App.css'
 // layout components
 import Navigation from './components/layout/Navigation';
 import WindBackground from './components/effects/WindBackground';
+import Footer from './components/layout/Footer'
 
 
 
