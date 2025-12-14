@@ -1,52 +1,61 @@
-// src/App.jsx
-
-
-import { useState, useEffect } from 'react'
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { WeatherProvider } from './contexts/WeatherContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
-
-
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
-// layout components
+// Layout Components
 import Navigation from './components/layout/Navigation';
 import WindBackground from './components/effects/WindBackground';
-import Footer from './components/layout/Footer'
+import Footer from './components/layout/Footer';
 
+// Pages
+import Home from './pages/Home';
 
+// Placeholder pages (create these later)
+const JutsuShowcase = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Jutsu Showcase - Coming Soon</div>;
+const Timeline = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Timeline - Coming Soon</div>;
+const FanArtGallery = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Gallery - Coming Soon</div>;
+const StrategistCorner = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Strategist's Corner - Coming Soon</div>;
+const Profile = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Profile - Coming Soon</div>;
+const Login = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Login - Coming Soon</div>;
+const Register = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Register - Coming Soon</div>;
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noopener noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <WeatherProvider>
+            <div className="min-h-screen bg-gradient-to-br from-emerald-950 via-slate-900 to-black text-white relative overflow-hidden">
+              {/* Animated Wind Background */}
+              <WindBackground />
+              
+              {/* Main Content */}
+              <div className="relative z-10">
+                <Navigation />
+                
+                <main>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/jutsus" element={<JutsuShowcase />} />
+                    <Route path="/timeline" element={<Timeline />} />
+                    <Route path="/gallery" element={<FanArtGallery />} />
+                    <Route path="/strategist" element={<StrategistCorner />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                  </Routes>
+                </main>
+                
+                <Footer />
+              </div>
+            </div>
+          </WeatherProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
+  );
 }
 
-export default App
+export default App;

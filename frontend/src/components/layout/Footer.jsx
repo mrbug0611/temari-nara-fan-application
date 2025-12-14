@@ -6,15 +6,7 @@ import { Wind, Heart, Github } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="relative -mt-24 bg-gradient-to-r from-slate-900 via-gray-900 to-black backdrop-blur-md z-50">
-
-
-      {/* Seamless wind fade */}
-    <div className="absolute top-0 left-0 w-full h-32 pointer-events-none z-10">
-    <   div className="w-full h-full bg-gradient-to-b from-emerald-500/30 via-emerald-500/15 to-transparent" />
-    </div>
-
-
+    <footer className="relative mt-20 bg-gradient-to-r from-slate-900 via-gray-900 to-black backdrop-blur-md border-t border-emerald-700/50">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
 
@@ -86,13 +78,14 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom — softened divider */}
+        {/* Bottom */}
         <div className="pt-8 border-t border-emerald-500/30 flex flex-col md:flex-row justify-between items-center">
           <p className="text-emerald-400 text-sm mb-4 md:mb-0 flex items-center">
             Made with <Heart className="w-4 h-4 mx-1 text-red-400 fill-red-400" /> by Naruto fans
           </p>
           <p className="text-emerald-400 text-sm">
-            © 2025 Temari Fan App. Not affiliated with Masashi Kishimoto or Shueisha.          </p>
+            © 2025 Temari Fan App. Not affiliated with Masashi Kishimoto or Shueisha.
+          </p>
         </div>
       </div>
     </footer>
