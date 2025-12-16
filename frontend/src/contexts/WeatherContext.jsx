@@ -30,7 +30,7 @@ export const WeatherProvider = ({ children }) => {
             
             try {
               // FIX: Add /api prefix to the URL
-              const response = await axios.get('/api/weather', {
+              const response = await axios.get('/weather', {
                 params: { lat: latitude, lon: longitude }
               });
               
