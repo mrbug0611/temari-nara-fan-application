@@ -12,9 +12,9 @@ import Footer from './components/layout/Footer';
 // Pages
 import Home from './pages/Home';
 import JutsuShowcase from './pages/JutsuShowcase';
+import Timeline from './pages/Timeline';
 
 // Placeholder pages (create these later)
-const Timeline = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Timeline - Coming Soon</div>;
 const FanArtGallery = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Gallery - Coming Soon</div>;
 const StrategistCorner = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Strategist's Corner - Coming Soon</div>;
 const Profile = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Profile - Coming Soon</div>;
