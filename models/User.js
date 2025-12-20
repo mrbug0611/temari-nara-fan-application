@@ -1,8 +1,6 @@
 //models/User.js 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const { type } = require('os');
-const e = require('express');
 
 const userSchema = new mongoose.Schema({
     username: {
