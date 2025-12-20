@@ -14,12 +14,12 @@ import Home from './pages/Home';
 import JutsuShowcase from './pages/JutsuShowcase';
 import Timeline from './pages/Timeline';
 import Register from './pages/Register';
+import Login from './pages/Login';
 
 // Placeholder pages (create these later)
 const FanArtGallery = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Gallery - Coming Soon</div>;
 const StrategistCorner = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Strategist's Corner - Coming Soon</div>;
 const Profile = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Profile - Coming Soon</div>;
-const Login = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Login - Coming Soon</div>;
 
 function App() {
   return (
