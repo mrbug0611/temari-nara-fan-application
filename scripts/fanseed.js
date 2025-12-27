@@ -1,4 +1,4 @@
-// scripts/fanseed.js - Script to seed the database with sample fan art
+// scripts/fanseed.js 
 const mongoose = require('mongoose');
 require('dotenv').config();
 
@@ -11,62 +11,55 @@ const slugify = require('slugify');
 const FanArt = require('../models/FanArt');
 const User = require('../models/user');
 
-const THUMB_DIR = path.resolve(__dirname, '..', 'public', 'uploads', 'thumbnails'); // puts sequence of paths together
+const THUMB_DIR = path.resolve(__dirname, '..', 'public', 'uploads', 'thumbnails');
 
-// build a safe images.weserve.nl proxy url 
-function BuildWeServURL(srcUrl, opts = { w: 400, h: 300, fit: 'cover' }) {
-  if (!srcUrl) {
-    return '';}
-    
+// Use weserv.nl as a CORS proxy
+function buildWeServURL(srcUrl, opts = { w: 400, h: 300, fit: 'cover' }) {
+  if (!srcUrl) return '';
   return `https://images.weserv.nl/?url=${encodeURIComponent(srcUrl)}&w=${opts.w}&h=${opts.h}&fit=${opts.fit}`;
-
 }
 
-async function tryDownload(url) {
+async function downloadImageBuffer(url) {
+  if (!url) return null;
+
   try {
-    const res = await axios.get(url, {
+    const response = await axios.get(url, {
       responseType: 'arraybuffer',
-      timeout: 20000,
-      maxContentLength: 50_000_000
+      timeout: 30000,
+      maxContentLength: 50_000_000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
     });
-    if (res.status === 200 && res.data) return Buffer.from(res.data); // new buffer of existing data 
+    
+    if (response.status === 200 && response.data) {
+      return Buffer.from(response.data);
+    }
     return null;
   } catch (err) {
+    console.warn(`Failed to download image from ${url}:`, err.message);
     return null;
   }
 }
 
-async function downloadImageBuffer(srcUrl) {
-  if (!srcUrl) return null;
-
-  // Try direct
-  let buf = await tryDownload(srcUrl);
-  if (buf) return buf;
-
-  // Try proxy
-  const proxy = BuildWeServURL(srcUrl);
-  buf = await tryDownload(proxy);
-  if (buf) return buf;
-
-  // Give up 
-  return null;
-}
-
 function makeThumbFilename(titleOrId, ext = 'jpg') {
-  const base = slugify(String(titleOrId).slice(0, 60), { lower: true, strict: true }) || 'img'; // convert text to url friendly slug 
+  const base = slugify(String(titleOrId).slice(0, 60), { lower: true, strict: true }) || 'img';
   const ts = Date.now().toString(36);
   return `${base}-${ts}.${ext}`;
 }
 
 async function createThumbnailFromBuffer(buffer, outPath) {
-  await sharp(buffer) // works on image buffers
-    .resize(400, 300, { fit: 'cover' })
-    .jpeg({ quality: 80 })
-    .toFile(outPath);
-  return true;
+  try {
+    await sharp(buffer)
+      .resize(400, 300, { fit: 'cover' })
+      .jpeg({ quality: 80 })
+      .toFile(outPath);
+    return true;
+  } catch (err) {
+    console.warn(`Failed to create thumbnail: ${err.message}`);
+    return false;
+  }
 }
-
-
 
 
 const getSampleFanArt = (adminUserId) => {
@@ -212,7 +205,7 @@ async function seedFanArt() {
     console.log('Starting fan art seeding with thumbnails...');
     const adminUser = await User.findOne({ isAdmin: true });
     if (!adminUser) {
-      console.error('Admin user not found. Run user seed first.');
+      console.error('Admin user not found. Run seed script first.');
       process.exit(1);
     }
 
@@ -224,33 +217,39 @@ async function seedFanArt() {
     const toInsert = [];
 
     for (const it of items) {
-      console.log(`Processing: ${it.title}`);
+      console.log(`\nProcessing: ${it.title}`);
 
+      // Try downloading the image
       const buffer = await downloadImageBuffer(it.imageUrl);
+      
       if (!buffer) {
-        console.warn(`  → Could not download: ${it.imageUrl}`);
-        const fallbackProxy = BuildWeServURL(it.imageUrl);
-        toInsert.push({ ...it, thumbnailUrl: fallbackProxy || it.imageUrl });
+        console.log(`Could not download image, using weserv.nl proxy`);
+        const proxyUrl = buildWeServURL(it.imageUrl);
+        toInsert.push({ ...it, thumbnailUrl: proxyUrl });
         continue;
       }
 
-      const filename = makeThumbFilename(it.title || it.imageUrl, 'jpg');
+      // Try creating a local thumbnail
+      const filename = makeThumbFilename(it.title, 'jpg');
       const outPath = path.join(THUMB_DIR, filename);
       const publicUrlPath = `/uploads/thumbnails/${filename}`;
 
-      try {
-        await createThumbnailFromBuffer(buffer, outPath);
-        console.log(`  → Thumbnail created: ${publicUrlPath}`);
+      const thumbCreated = await createThumbnailFromBuffer(buffer, outPath);
+      
+      if (thumbCreated) {
+        console.log(`Local thumbnail created: ${publicUrlPath}`);
         toInsert.push({ ...it, thumbnailUrl: publicUrlPath });
-      } catch (err) {
-        console.error('  → Sharp failed:', err.message);
-        const fallbackProxy = BuildWeServURL(it.imageUrl);
-        toInsert.push({ ...it, thumbnailUrl: fallbackProxy || it.imageUrl });
+      } else {
+        // Fallback to weserv.nl proxy if sharp fails
+        console.log(`Sharp failed, using weserv.nl proxy as fallback`);
+        const proxyUrl = buildWeServURL(it.imageUrl);
+        toInsert.push({ ...it, thumbnailUrl: proxyUrl });
       }
     }
 
     const created = await FanArt.insertMany(toInsert);
-    console.log(`Inserted ${created.length} FanArt records with thumbnails.`);
+    console.log(`\nInserted ${created.length} FanArt records with thumbnails.`);
+    console.log('Seeding complete!');
   } catch (err) {
     console.error('Seeding error:', err);
     throw err;
@@ -264,7 +263,6 @@ async function runSeed() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB.');
     await seedFanArt();
-    console.log('Seeding finished.');
     process.exit(0);
   } catch (err) {
     console.error('Fatal error:', err.message || err);

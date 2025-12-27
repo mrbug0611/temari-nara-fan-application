@@ -19,6 +19,7 @@ const fanArtRoutes = require('./routes/fanart.routes');
 const strategistRoutes = require('./routes/strategist.routes');
 const weatherRoutes = require('./routes/weather.routes');
 const userRoutes = require('./routes/user.routes');
+const proxyRoutes = require('./routes/proxy.routes');
 
 // middleware 
 app.use(helmet()); // security headers (protection against common vulnerabilities)
@@ -43,6 +44,16 @@ app.use(express.static(path.join(__dirname, 'public'), {
   index: false // disable serving index.html for directories if you prefer
 }));
 
+// Also explicitly serve uploads directory with proper headers
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    // maxAge option already sets Cache-Control, no need to set it again
+    // CORS is already handled by the global middleware
+  }
+}));
+
+
 // rate limiting
 // limit number of requests from a single IP
 const limiter = rateLimit({
@@ -66,6 +77,7 @@ app.use('/api/fanart', fanArtRoutes);
 app.use('/api/strategist', strategistRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/proxy-', proxyRoutes);
 
 // health check endpoint
 app.get('/api/health', (req, res) => {
