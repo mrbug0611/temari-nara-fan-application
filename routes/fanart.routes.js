@@ -153,14 +153,14 @@ router.post('/:id/comment', authenticate, async (req, res) => {
             return res.status(404).json({ error: 'Fan Art not found' });
         }
 
-        fanArt.commnents.push( {
+        fanArt.comments.push( {
             userId: req.user.id,
             username: req.user.username,
             text: req.body.text,
         });
 
         await fanArt.save();
-        res.status(201).json(fanArt.commnents[fanArt.comments.length - 1]);
+        res.status(201).json(fanArt.comments[fanArt.comments.length - 1]);
     }
     catch (error) {
         res.status(400).json({ error: error.message});

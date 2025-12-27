@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const CookieParser = require('cookie-parser');
+const path = require('path');
 require('dotenv').config();
 
 // create express app
@@ -28,11 +29,19 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // allowed headers
 })); // enable CORS (cross-origin resource sharing)
-; // enable CORS (cross-origin resource sharing)
+// enable CORS (cross-origin resource sharing)
 // allows requests from frontend url 
 app.use(CookieParser()); // parse cookies from request headers
 app.use(express.json({limit: '10mb'})); // parse JSON request bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // parse URL-encoded request bodies
+
+// Serve static files from the public folder
+// Any file placed at public/uploads/thumbnails/... will be available at /uploads/thumbnails/...
+app.use(express.static(path.join(__dirname, 'public'), {
+  //  set client cache lifetime
+  maxAge: '1d',
+  index: false // disable serving index.html for directories if you prefer
+}));
 
 // rate limiting
 // limit number of requests from a single IP
