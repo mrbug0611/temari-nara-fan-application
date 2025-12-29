@@ -99,9 +99,12 @@ router.get('/:id', async (req, res) => {
             req.params.id,
             {$inc: {views: 1}},
             {new: true}
-        ).populate('author.userId', 'username profile.avatar profile.rank')
-         .populate('replies.author.userId', 'username profile.avatar profile.rank');
-
+        ).populate('author.userId', 'username profile.avatar profile.rank');
+        
+        // Populate replies separately since they're embedded subdocuments
+        if (post && post.replies.length > 0) {
+            await post.populate('replies.author.userId', 'username profile.avatar profile.rank');
+        }
 
         if (!post) {
             return res.status(404).json({error: 'Post not found'});
@@ -111,6 +114,7 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({error: error.message});
     }
 });
+
 
 // create new post 
 router.post('/', authenticate, async (req, res) => {

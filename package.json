@@ -8,7 +8,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
-    "seed-fanart": "node scripts/fanseed.js"
+    "seed-fanart": "node scripts/fanseed.js",
+    "seed-strategist": "node scripts/strategist-seed.js"
+
   },
   "repository": {
     "type": "git",
