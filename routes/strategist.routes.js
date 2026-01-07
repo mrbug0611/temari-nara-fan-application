@@ -5,7 +5,7 @@ const StrategistPost = require('../models/StrategistPost');
 const {authenticate, isModerator} = require('../middleware/auth');
 
 // get all strategist posts with filtering 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {  // Add authenticate middleware
     try {
         const {
             category, 
@@ -23,7 +23,6 @@ router.get('/', async (req, res) => {
         }
 
         if (featured !== undefined) {
-
             filter.featured = featured === 'true';
         }
 
@@ -32,37 +31,38 @@ router.get('/', async (req, res) => {
         }
 
         const skip = (page - 1) * limit;
+        const currentUserId = req.user._id;
 
-        // get pinned posts separately to always show them on top
         let posts; 
 
         if (pinned === undefined){
             const pinnedPosts = await StrategistPost.find({pinned: true})
                 .sort(sort)
-                .populate('author.userId', 'username profile.avatar profile.rank'); 
+                .populate('author.userId', 'username profile.avatar profile.rank');
 
-            
             const regularPosts = await StrategistPost.find({...filter, pinned: false})
                 .sort(sort)
                 .skip(skip)
                 .limit(parseInt(limit))
-                .populate('author.userId', 'username profile.avatar profile.rank');
+                .populate('author.userId', 'username profile.avatar profile.rank'); // populate author info for regular posts
+            
             posts = [...pinnedPosts, ...regularPosts];
         }   
-
         else {
-            
             posts = await StrategistPost.find(filter)
                 .sort(sort)
                 .skip(skip)
                 .limit(parseInt(limit))
                 .populate('author.userId', 'username profile.avatar profile.rank');
-
         } 
 
+        // Add hasLiked boolean for current user (don't populate likedBy array)
+        posts = posts.map(post => ({
+            ...post.toObject(),
+            hasLiked: post.likedBy.includes(currentUserId)
+        }));
+
         const total = await StrategistPost.countDocuments(filter);
-
-
 
         res.json({
             posts,

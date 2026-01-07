@@ -16,9 +16,9 @@ import Timeline from './pages/Timeline';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import FanArtGallery from './pages/FanArtGallery';
+import StrategistCorner from './pages/StrategistCorner';
 
 // Placeholder pages (create these later)
-const StrategistCorner = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Strategist's Corner - Coming Soon</div>;
 const Profile = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Profile - Coming Soon</div>;
 
 function App() {
