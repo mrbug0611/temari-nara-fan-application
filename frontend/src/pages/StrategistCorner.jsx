@@ -7,6 +7,7 @@ const StrategistCorner = () => {
     const [likedPosts, setLikedPosts] = useState({});
     const [inFlightLikes, setInFlightLikes] = useState({});
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     useEffect(() => {
         fetchPosts();
@@ -14,8 +15,8 @@ const StrategistCorner = () => {
 
     const fetchPosts = async () => {
         try {
-            // Get current user first
-            let currentUserId = null;
+            // Get current user info
+            let userId = null;
             let isAuth = false;
             try {
                 const userResponse = await fetch('/api/user/me', {
@@ -23,40 +24,63 @@ const StrategistCorner = () => {
                 });
                 if (userResponse.ok) {
                     const userData = await userResponse.json();
-                    currentUserId = userData._id;
+                    userId = userData._id;
                     isAuth = true;
                 }
             } catch (err) {
-                console.error('Failed to get current user:', err);
+                console.debug('User not authenticated');
             }
 
-            // Set authentication state
             setIsAuthenticated(isAuth);
+            setCurrentUserId(userId);
 
             // Fetch posts
             const response = await fetch('/api/strategist', {
                 credentials: 'include'
             });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch posts: ${response.status}`);
+            }
+
             const data = await response.json();
-            const postsData = data.posts || data;
+            const postsData = Array.isArray(data) ? data : (data.posts || []);
+
+            if (!Array.isArray(postsData)) {
+                console.error('Posts data is not an array:', postsData);
+                setPosts([]);
+                setLoading(false);
+                return;
+            }
+
             setPosts(postsData);
 
-            // Initialize liked posts map based on likedBy array
+            // Initialize liked posts map - use hasLiked from backend OR check likedBy array
             const initialLikedMap = {};
             postsData.forEach(post => {
-                if (currentUserId && post.likedBy && Array.isArray(post.likedBy)) {
-                    // Check if current user's ID is in the likedBy array
-                    const hasLiked = post.likedBy.some(id => {
-                        const idString = typeof id === 'string' ? id : id?._id?.toString?.();
-                        return idString === currentUserId.toString();
-                    });
-                    initialLikedMap[post._id] = hasLiked;
+                let hasLiked = false;
+
+                // Priority 1: Use hasLiked from backend (for authenticated users)
+                if (post.hasLiked !== undefined) {
+                    hasLiked = !!post.hasLiked;
                 }
+                // Priority 2: Check likedBy array directly (fallback)
+                else if (userId && post.likedBy && Array.isArray(post.likedBy)) {
+                    hasLiked = post.likedBy.some(id => {
+                        const idString = typeof id === 'string' ? id : id?._id?.toString?.();
+                        return idString === userId.toString();
+                    });
+                }
+
+                initialLikedMap[post._id] = hasLiked;
             });
+
             setLikedPosts(initialLikedMap);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching posts:", error);
+            setPosts([]);
+            setLikedPosts({});
             setLoading(false);
         }
     };
@@ -72,18 +96,24 @@ const StrategistCorner = () => {
         if (inFlightLikes[postId]) return;
 
         const currentlyLiked = !!likedPosts[postId];
-        
-        // Optimistic update - just toggle the liked state and update count
+
+        // Optimistic update
         setInFlightLikes(prev => ({ ...prev, [postId]: true }));
+        const newLikedState = !currentlyLiked;
+        
         setLikedPosts(prev => ({
             ...prev,
-            [postId]: !currentlyLiked
+            [postId]: newLikedState
         }));
 
         setPosts(prev =>
             prev.map(post =>
                 post._id === postId
-                    ? { ...post, likes: currentlyLiked ? post.likes - 1 : post.likes + 1 }
+                    ? {
+                        ...post,
+                        likes: currentlyLiked ? post.likes - 1 : post.likes + 1,
+                        hasLiked: newLikedState
+                      }
                     : post
             )
         );
@@ -97,13 +127,23 @@ const StrategistCorner = () => {
                 }
             });
 
+            if (!response.ok) {
+                throw new Error('Failed to like post');
+            }
+
             const data = await response.json();
-            
-            if (response.ok && data) {
+
+            if (data) {
                 // Sync with server response
                 setPosts(prev =>
                     prev.map(post =>
-                        post._id === postId ? { ...post, likes: data.likes } : post
+                        post._id === postId
+                            ? {
+                                ...post,
+                                likes: data.likes,
+                                hasLiked: data.hasLiked
+                              }
+                            : post
                     )
                 );
 
@@ -114,7 +154,7 @@ const StrategistCorner = () => {
             }
         } catch (err) {
             console.error('Like toggle failed:', err);
-            
+
             // Rollback on error
             setLikedPosts(prev => ({
                 ...prev,
@@ -124,7 +164,11 @@ const StrategistCorner = () => {
             setPosts(prev =>
                 prev.map(post =>
                     post._id === postId
-                        ? { ...post, likes: currentlyLiked ? post.likes + 1 : post.likes - 1 }
+                        ? {
+                            ...post,
+                            likes: currentlyLiked ? post.likes + 1 : post.likes - 1,
+                            hasLiked: currentlyLiked
+                          }
                         : post
                 )
             );
@@ -137,7 +181,16 @@ const StrategistCorner = () => {
         }
     };
 
-    const isLiked = (postId) => !!likedPosts[postId];
+    const isLiked = (postId) => {
+        // Check likedPosts state first
+        if (likedPosts[postId] !== undefined) {
+            return likedPosts[postId];
+        }
+        
+        // Fallback to post.hasLiked property
+        const post = posts.find(p => p._id === postId);
+        return post?.hasLiked || false;
+    };
 
     if (loading) {
         return (

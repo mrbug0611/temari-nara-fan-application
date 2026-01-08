@@ -2,10 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const StrategistPost = require('../models/StrategistPost');
-const {authenticate, isModerator} = require('../middleware/auth');
+const { authenticate, optionalAuthenticate, isModerator } = require('../middleware/auth');
 
-// get all strategist posts with filtering 
-router.get('/', authenticate, async (req, res) => {  // Add authenticate middleware
+// get all strategist posts with filtering - OPTIONAL authentication
+router.get('/', optionalAuthenticate, async (req, res) => {  // ← Changed from authenticate to optionalAuthenticate
     try {
         const {
             category, 
@@ -31,7 +31,6 @@ router.get('/', authenticate, async (req, res) => {  // Add authenticate middlew
         }
 
         const skip = (page - 1) * limit;
-        const currentUserId = req.user._id;
 
         let posts; 
 
@@ -44,7 +43,7 @@ router.get('/', authenticate, async (req, res) => {  // Add authenticate middlew
                 .sort(sort)
                 .skip(skip)
                 .limit(parseInt(limit))
-                .populate('author.userId', 'username profile.avatar profile.rank'); // populate author info for regular posts
+                .populate('author.userId', 'username profile.avatar profile.rank');
             
             posts = [...pinnedPosts, ...regularPosts];
         }   
@@ -56,11 +55,17 @@ router.get('/', authenticate, async (req, res) => {  // Add authenticate middlew
                 .populate('author.userId', 'username profile.avatar profile.rank');
         } 
 
-        // Add hasLiked boolean for current user (don't populate likedBy array)
-        posts = posts.map(post => ({
-            ...post.toObject(),
-            hasLiked: post.likedBy.includes(currentUserId)
-        }));
+        // Add hasLiked boolean for current user (only if authenticated)
+        if (req.user) {
+            const currentUserId = req.user._id;
+            posts = posts.map(post => {
+                const postObj = post.toObject();
+                return {
+                    ...postObj,
+                    hasLiked: post.likedBy.some(id => id.toString() === currentUserId.toString())
+                };
+            });
+        }
 
         const total = await StrategistPost.countDocuments(filter);
 
@@ -76,7 +81,6 @@ router.get('/', authenticate, async (req, res) => {  // Add authenticate middlew
         res.status(500).json({error: error.message});
     }
 });
-
 // get trending posts (most liked in last 7 days)
 router.get('/trending', async (req, res) => {
     try {
@@ -188,24 +192,28 @@ router.post('/:id/like', authenticate, async (req, res) => {
             return res.status(404).json({error: 'Post not found'});
         }
 
-        const hasLiked = post.likedBy.includes(req.user.id);
+        const currentUserId = req.user._id;
+        const hasLiked = post.likedBy.some(id => id.toString() === currentUserId.toString());
 
         if (hasLiked) {
+            // Unlike
             post.likedBy = post.likedBy.filter(
-                // make sure id not in likedBy array
-                id => id.toString() !== req.user.id.toString()
+                id => id.toString() !== currentUserId.toString()
             );
             post.likes = Math.max(0, post.likes - 1);
-        }
-
-        else {
-            post.likedBy.push(req.user.id);
+        } else {
+            // Like
+            post.likedBy.push(currentUserId);
             post.likes += 1;
         }
 
-    
         await post.save();
-        res.json({likes: post.likes, hasLiked: !hasLiked});
+        
+        // Return the updated state
+        res.json({
+            likes: post.likes,
+            hasLiked: !hasLiked  // Return the NEW state (opposite of what it was)
+        });
     } catch (error) {
         res.status(500).json({error: error.message});
     }
