@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// component tree is the relationship between components in a React application, showing how they are nested and interact with each other.
-// context provides a way to pass data through the component tree without having to pass props (properties) down manually at every level.
 const AuthContext = createContext();
 
 export const useAuth = () => {
-    // give access to the AuthContext values
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');
@@ -16,104 +13,107 @@ export const useAuth = () => {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// configure axios defaults
 axios.defaults.baseURL = API_URL;
-axios.defaults.withCredentials = true; // include cookies in requests
-
-
+axios.defaults.withCredentials = true;
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    // loading state to check if user data is being fetched
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);  // ← ADD THIS
 
-     // NO TOKEN STATE - cookies handle authentication automatically
-
-    // Fetch user on mount
     useEffect(() => {
         fetchUser();
     }, []);
 
-
     const fetchUser = async () => {
         try {
-            // cookies are automatically included by axios
+            setError(null);  // Clear previous errors
             const response = await axios.get('/user/me');
             setUser(response.data);
         } 
-        catch (error) {
-            console.error('Error fetching user:', error);
-            setUser(null);}
+        catch (err) {
+            console.error('Error fetching user:', err);
+            setUser(null);
+            setError(err.response?.data?.error || 'Failed to load user profile');  // ← SET ERROR
+        }
         finally {
             setLoading(false);
         }
-
     }
-
-
 
     const login = async (email, password) => {
         try{
+            setError(null);
             const response = await axios.post('/user/login', { email, password });
             setUser(response.data.user);
-
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.response?.data?.error || 'Login failed' };
+            const errorMsg = error.response?.data?.error || 'Login failed';
+            setError(errorMsg);
+            return { success: false, error: errorMsg };
         }
     }
 
     const register = async (username, email, password) => {
         try {
+            setError(null);
             const response = await axios.post('/user/register', { username, email, password });
             setUser(response.data.user);
-
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.response?.data?.error || 'Registration failed' };
+            const errorMsg = error.response?.data?.error || 'Registration failed';
+            setError(errorMsg);
+            return { success: false, error: errorMsg };
         }
     }
 
     const logout = async () => {
         try {
+            setError(null);
             await axios.post('/user/logout');
             setUser(null);
         }
         catch (error) {
-            setUser(null); // clear user even if logout request fails
+            setError('Logout failed, but clearing local session');
+            setUser(null);
         }
-
     }
 
     const updateProfile = async (updates) => {
         try {
+            setError(null);
             const response = await axios.put('/user/me', updates);
             setUser(response.data);
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.response?.data?.error || 'Profile update failed' };
+            const errorMsg = error.response?.data?.error || 'Profile update failed';
+            setError(errorMsg);
+            return { success: false, error: errorMsg };
         }
     }
+
+    const clearError = () => setError(null);  // ← ADD HELPER TO CLEAR ERROR
 
     const value = {
         user, 
         loading, 
+        error,  // ← EXPORT ERROR
+        clearError,  // ← EXPORT CLEAR FUNCTION
         login, 
         register, 
         logout, 
         updateProfile, 
-        isAuthenticated: !!user, // double negation to convert user object to boolean
-        isAdmin: user?.isAdmin || false, // check if user role is admin
-        isModerator: user?.isModerator || user?.isAdmin || false, // check if user role is moderator
+        isAuthenticated: !!user,
+        isAdmin: user?.isAdmin || false,
+        isModerator: user?.isModerator || user?.isAdmin || false,
     }
 
     return (
         <AuthContext.Provider value={value}>
-        {children}
+            {children}
         </AuthContext.Provider>
     );
- 
-}; 
+};

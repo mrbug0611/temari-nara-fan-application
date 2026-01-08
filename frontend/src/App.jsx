@@ -17,9 +17,8 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import FanArtGallery from './pages/FanArtGallery';
 import StrategistCorner from './pages/StrategistCorner';
+import Profile from './pages/Profile';
 
-// Placeholder pages (create these later)
-const Profile = () => <div className="min-h-screen flex items-center justify-center text-white text-4xl">Profile - Coming Soon</div>;
 
 function App() {
   return (
