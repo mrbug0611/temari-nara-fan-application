@@ -49,14 +49,19 @@ const Footer = () => {
           <div>
             <h3 className="text-emerald-300 font-semibold mb-4">Community</h3>
             <ul className="space-y-2">
-              {['Guidelines', 'Submit Fan Art', 'Report Issue', 'Contact Us'].map(item => (
-                <li key={item}>
-                  <a
-                    href="#"
+              {[
+                ['Guidelines', '/guidelines'],
+                ['Submit Fan Art', '/gallery'],
+                ['Report Issue', '#'],
+                ['Contact Us', '#'],
+              ].map(([label, path]) => (
+                <li key={label}>
+                  <Link
+                    to={path}
                     className="text-emerald-400 hover:text-emerald-300 transition-colors text-sm"
                   >
-                    {item}
-                  </a>
+                    {label}
+                  </Link>
                 </li>
               ))}
             </ul>
