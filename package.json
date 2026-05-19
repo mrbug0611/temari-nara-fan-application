@@ -10,7 +10,6 @@
     "seed": "node scripts/seed.js",
     "seed-fanart": "node scripts/fanseed.js",
     "seed-strategist": "node scripts/strategist-seed.js"
-
   },
   "repository": {
     "type": "git",
@@ -33,10 +32,13 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "fs-extra": "^11.3.3",
+    "googleapis": "^171.4.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.1",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.7",
     "nodemon": "^3.1.11",
     "sharp": "^0.34.5",
     "slugify": "^1.6.6"

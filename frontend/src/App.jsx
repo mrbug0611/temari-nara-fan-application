@@ -19,6 +19,7 @@ import FanArtGallery from './pages/FanArtGallery';
 import StrategistCorner from './pages/StrategistCorner';
 import Profile from './pages/Profile';
 import Guidelines from './pages/Guidelines';
+import ReportIssue from './pages/ReportIssue';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/guidelines" element={<Guidelines />} />
+                    <Route path="/reports" element={<ReportIssue />} />
                   </Routes>
                 </main>
                 
