@@ -53,7 +53,7 @@ const Footer = () => {
                 ['Guidelines', '/guidelines'],
                 ['Submit Fan Art', '/gallery'],
                 ['Report Issue', '/reports'],
-                ['Contact Us', '#'],
+                ['Contact Us', '/contact'],
               ].map(([label, path]) => (
                 <li key={label}>
                   <Link

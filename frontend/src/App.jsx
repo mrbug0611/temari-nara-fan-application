@@ -20,6 +20,7 @@ import StrategistCorner from './pages/StrategistCorner';
 import Profile from './pages/Profile';
 import Guidelines from './pages/Guidelines';
 import ReportIssue from './pages/ReportIssue';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/guidelines" element={<Guidelines />} />
                     <Route path="/reports" element={<ReportIssue />} />
+                    <Route path="/contact" element={<ContactUs />} />
                   </Routes>
                 </main>
                 

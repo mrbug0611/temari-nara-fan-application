@@ -21,6 +21,7 @@ const weatherRoutes = require('./routes/weather.routes');
 const userRoutes = require('./routes/user.routes');
 const proxyRoutes = require('./routes/proxy.routes');
 const reportRoutes = require('./routes/report.routes'); // import report routes
+const contactRoutes = require('./routes/contact.routes'); // import contact routes
 
 // middleware 
 app.use(helmet()); // security headers (protection against common vulnerabilities)
@@ -80,6 +81,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/proxy', proxyRoutes);
 app.use('/api/reports', reportRoutes); // use report routes
+app.use('/api/contact', contactRoutes); // use contact routes
 
 // health check endpoint
 app.get('/api/health', (req, res) => {
