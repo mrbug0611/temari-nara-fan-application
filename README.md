@@ -238,7 +238,7 @@ cd frontend
 npm run dev
 ```
 
-The backend runs on `http://localhost:5000` and the Vite frontend on `http://localhost:5173` by default.
+The backend runs on `http://localhost:5000` and the Vite frontend on `http://localhost:3000` by default.
 
 **Production build:**
 
