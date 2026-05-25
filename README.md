@@ -38,3 +38,40 @@
 The **Temari Fan App** is a community-driven web application built for those who are fans of the Naruto/Boruto franchise. It uses both anime and real-world data to create a unique user experience. For example, the project integrates the OpenWeather API map to power dynamic wind and weather visual effects that respond to the weather at your actual location. The app also supports user accounts, fan art submissions, a community-driven discussion form, a comprehensive jutsu showcase, and a character timeline. 
 
 --- 
+
+## Features 
+### Core Pages
+- **Home** — Animated landing page with live wind background effects powered by GSAP
+- **Jutsu Showcase** — Browse and filter Temari's full jutsu repertoire with rank, type, nature, and chakra cost details
+- **Timeline** — Chronological character arc from Pre-Academy through Boruto
+- **Fan Art Gallery** — Community-submitted artwork with likes, filtering, and image upload support
+- **Strategist's Corner** — Forum-style discussion board for community posts
+- **Guidelines** — Community rules and standards
+- **Report Issue** — In-app bug reporting and feature request system
+- **Contact Us** — Contact form with email delivery via Gmail OAuth2
+
+### User System
+- JWT-based authentication (stored in HTTP-only cookies)
+- User registration and login with bcrypt password hashing
+- Profile page with avatar, bio, favorite character/jutsu, and ninja rank
+- Saved content (fan art, posts, jutsus)
+- Achievement system
+- User preferences (wind effects, weather background, theme, notifications)
+
+### Admin & Moderation
+- Admin and moderator roles with route-level guards
+- User ban system with reason tracking
+- Report review and management dashboard
+
+### Technical Highlights
+- Real-time weather integration via OpenWeatherMap API
+- GSAP-powered animated wind particle background
+- Gmail OAuth2 email delivery (no app passwords required)
+- Rate limiting on all API routes (100 req / 15 min per IP)
+- Helmet.js security headers
+- Image uploads with Multer + Sharp image processing
+- CodeRabbit AI code review configuration
+
+--- 
+
+
