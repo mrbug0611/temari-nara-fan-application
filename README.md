@@ -1,0 +1,32 @@
+<img width="1000" height="853" alt="image" src="https://github.com/user-attachments/assets/b4281822-a07f-441c-88f7-597b4ed4a53b" />
+
+# Temari Fan App 
+
+> A full-stack MERN web application dedicated to Temari from the Naruto Universe. It features effects that change with the weather, a showcase of her jutsus, a fan art gallery, community discussions, and more.
+
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-7.x-47A248?logo=mongodb&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38BDF8?logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/license-ISC-blue)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+  - [Running the App](#running-the-app)
+  - [Seeding the Database](#seeding-the-database)
+- [API Reference](#api-reference)
+- [Authentication](#authentication)
+- [Role System](#role-system)
+- [Contributing](#contributing)
+- [License](#license)
