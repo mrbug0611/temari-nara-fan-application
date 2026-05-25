@@ -300,3 +300,48 @@ Protected routes use the `authenticate` middleware, which reads from `req.cookie
 
 --- 
 
+
+## Role System
+
+| Role | Access |
+|---|---|
+| Guest | Browse jutsus, timeline, fan art, forum; submit contact |
+| User | All guest access + submit fan art, create/reply to forum posts |
+| Moderator | All user access + manage reports, moderate content |
+| Admin | Full access including user management, content CRUD, ban users |
+
+Roles are checked via `isAdmin` and `isModerator` middleware chained after `authenticate`.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
+
+This project uses [CodeRabbit](https://coderabbit.ai) for AI-assisted code review on all pull requests. Reviews are automatic — no setup needed.
+
+### Development Workflow
+
+1. Fork the repo and create a feature branch: `git checkout -b feat/my-feature`
+2. Make your changes following the code style guidelines
+3. Commit with a descriptive message: `git commit -m "feat: add wind jutsu filter"`
+4. Push your branch and open a PR against `main`
+5. Address CodeRabbit and human review feedback
+6. Merge after approval
+
+---
+
+## License
+
+This project is licensed under the ISC License. See [`LICENSE`](LICENSE) for details.
+
+**Disclaimer:** This is a fan-made application. All Naruto characters, jutsu names, and related lore are the intellectual property of Masashi Kishimoto / Shueisha / Pierrot. This project is non-commercial and created purely for fan appreciation.
+
+---
+
+
+<img width="1429" height="1080" alt="image" src="https://github.com/user-attachments/assets/f802ac9c-57a1-40e4-a0c5-5fa57988816a" />
+
+
+
+
