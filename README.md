@@ -53,10 +53,8 @@ The **Temari Fan App** is a community-driven web application built for those who
 ### User System
 - JWT-based authentication (stored in HTTP-only cookies)
 - User registration and login with bcrypt password hashing
-- Profile page with avatar, bio, favorite character/jutsu, and ninja rank
+- Profile page with bio, and ninja rank
 - Saved content (fan art, posts, jutsus)
-- Achievement system
-- User preferences (wind effects, weather background, theme, notifications)
 
 ### Admin & Moderation
 - Admin and moderator roles with route-level guards
@@ -66,7 +64,7 @@ The **Temari Fan App** is a community-driven web application built for those who
 ### Technical Highlights
 - Real-time weather integration via OpenWeatherMap API
 - GSAP-powered animated wind particle background
-- Gmail OAuth2 email delivery (no app passwords required)
+- Gmail OAuth2 email delivery
 - Rate limiting on all API routes (100 req / 15 min per IP)
 - Helmet.js security headers
 - Image uploads with Multer + Sharp image processing
