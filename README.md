@@ -30,3 +30,11 @@
 - [Role System](#role-system)
 - [Contributing](#contributing)
 - [License](#license)
+
+--- 
+
+## Overview 
+
+The **Temari Fan App** is a community-driven web application built for those who are fans of the Naruto/Boruto franchise. It uses both anime and real-world data to create a unique user experience. For example, the project integrates the OpenWeather API map to power dynamic wind and weather visual effects that respond to the weather at your actual location. The app also supports user accounts, fan art submissions, a community-driven discussion form, a comprehensive jutsu showcase, and a character timeline. 
+
+--- 
