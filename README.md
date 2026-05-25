@@ -267,4 +267,23 @@ npm run seed-strategist
 
 ---
 
+## API Reference
 
+All endpoints are prefixed with `/api`. A health check is available at `GET /api/health`.
+
+Full API documentation is in [`docs/API.md`](docs/API.md).
+
+### Quick Reference
+
+| Resource | Base Path | Auth Required |
+|---|---|---|
+| Auth / Users | `/api/user` | Partial |
+| Jutsus | `/api/jutsu` | Read: No / Write: Admin |
+| Timeline | `/api/timeline` | Read: No / Write: Admin |
+| Fan Art | `/api/fanart` | Read: No / Write: Yes |
+| Strategist Posts | `/api/strategist` | Read: No / Write: Yes |
+| Reports | `/api/reports` | No |
+| Contact | `/api/contact` | No |
+| Weather | `/api/weather` | No |
+
+---
