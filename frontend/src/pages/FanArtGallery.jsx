@@ -1,7 +1,7 @@
 // src/pages/FanArtGallery.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Image, Heart, Eye, Upload, X } from 'lucide-react';
+import { Image, Heart, Eye, Upload, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LOCAL_LIKED_KEY = 'fanart_liked_by_user_v1';
@@ -21,8 +21,25 @@ const FanArtGallery = () => {
   const [filter, setFilter] = useState({ style: '', era: '' });
   const [selectedArt, setSelectedArt] = useState(null);
 
-  // imageErrors: { [artId]: true }
+  // Independent image error states for gallery grid vs modal window
   const [imageErrors, setImageErrors] = useState({});
+  const [modalImageError, setModalImageError] = useState(false);
+
+  // Form Upload Submission States
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    artistName: '',
+    imageUrl: '',
+    description: '',
+    style: 'Digital',
+    era: 'Part 1',
+    tags: '',
+    twitter: '',
+    instagram: ''
+  });
 
   // Track which posts the current user has liked (client-side map). Value true = liked.
   const [likedByUser, setLikedByUser] = useState({});
@@ -33,22 +50,32 @@ const FanArtGallery = () => {
 
   const { isAuthenticated } = useAuth();
 
-  // CORS proxy function (used for modal preview)
-  const getCorsImageUrl = (imageUrl) => {
-    if (!imageUrl) return '';
-    return `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&w=1200&h=900&fit=cover`;
-  };
-
+  // FIXED: Handle all image types correctly
   const getCachedImageUrl = (art) => {
+    if (!art) return '';
     const imageUrl = art.thumbnailUrl || art.imageUrl;
     if (!imageUrl) return '';
 
     let finalUrl = imageUrl;
+    
+    // Local uploaded images
     if (imageUrl.startsWith('/')) {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
       finalUrl = `${backendUrl}${imageUrl}`;
-    } else if (imageUrl.startsWith('http')) {
-      finalUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+    } 
+    // External URLs (Instagram, Twitter, etc.) - use CORS proxy
+    else if (imageUrl.startsWith('http')) {
+      // Check if it's Instagram/Meta CDN
+      if (imageUrl.includes('instagram') || 
+          imageUrl.includes('cdninstagram') || 
+          imageUrl.includes('scontent') ||
+          imageUrl.includes('fbcdn')) {
+        // Use allorigins.win proxy for Instagram/Meta
+        finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+      } else {
+        // Use weserv.nl for other external URLs (Twitter, etc.)
+        finalUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&w=1200&h=900&fit=cover`;
+      }
     }
     return finalUrl;
   };
@@ -199,29 +226,22 @@ const FanArtGallery = () => {
     if (!art) return;
     const artId = art._id;
 
-    // open modal immediately using optimistic selection
+    // Reset layout configuration state maps for separate container views
+    setModalImageError(false);
     setSelectedArt(art);
 
-    // if view increment already in-flight for this art, don't re-increment; still open modal
     if (inFlightViews[artId]) return;
 
-    // optimistic increment in UI so user sees immediate feedback
     setFanArt((prev) => prev.map((a) => (a._id === artId ? { ...a, views: (a.views || 0) + 1 } : a)));
-
     setInFlightViews((prev) => ({ ...prev, [artId]: true }));
+    
     try {
-      // GET /fanart/:id increments views on the server and returns the updated doc
       const res = await axios.get(`/fanart/${artId}`);
       if (res && res.data) {
         const updated = res.data;
-
-        // Replace the item in fanArt with the authoritative server result
         setFanArt((prev) => prev.map((a) => (a._id === artId ? updated : a)));
-
-        // Update selectedArt to the server version (in case fields like views/likes/comments changed)
         setSelectedArt(updated);
 
-        // If server returns per-item liked info, merge it
         if (typeof updated.hasLiked === 'boolean') {
           setLikedByUser((prev) => {
             const copy = { ...prev };
@@ -233,9 +253,7 @@ const FanArtGallery = () => {
         }
       }
     } catch (err) {
-      console.error('Fetching art (increment view) failed:', err);
-
-      // rollback optimistic view increment on failure
+      console.error('Fetching art failed:', err);
       setFanArt((prev) =>
         prev.map((a) => (a._id === artId ? { ...a, views: Math.max((a.views || 1) - 1, 0) } : a))
       );
@@ -248,7 +266,80 @@ const FanArtGallery = () => {
     }
   };
 
-  // helper to render social links safely
+  // ✅ FIXED: Submit Handler for sending new entries to backend endpoint (POST /fanart)
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    setUploadError('');
+
+    // Validation
+    if (!uploadForm.title.trim()) {
+      setUploadError('Title is required.');
+      return;
+    }
+    if (!uploadForm.artistName.trim()) {
+      setUploadError('Artist Name is required.');
+      return;
+    }
+    if (!uploadForm.imageUrl.trim() || !isValidHttpUrl(uploadForm.imageUrl)) {
+      setUploadError('Please provide a valid image HTTP/HTTPS source URL.');
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      console.log('Submitting fan art:', uploadForm); // Debug log
+
+      const payload = {
+        title: uploadForm.title.trim(),
+        artist: {
+          name: uploadForm.artistName.trim(),
+          socialLinks: {
+            twitter: uploadForm.twitter.trim() || undefined,
+            instagram: uploadForm.instagram.trim() || undefined
+          }
+        },
+        style: uploadForm.style,
+        era: uploadForm.era,
+        imageUrl: uploadForm.imageUrl.trim(),
+        description: uploadForm.description.trim() || undefined,
+        tags: uploadForm.tags
+          ? uploadForm.tags.split(',').map((t) => t.trim()).filter(Boolean)
+          : []
+      };
+
+      console.log('Payload being sent:', payload); // Debug log
+
+      const response = await axios.post('/fanart', payload);
+      console.log('Response from server:', response.data); // Debug log
+
+      // Clean form inputs on success and refresh page context 
+      setUploadForm({
+        title: '',
+        artistName: '',
+        imageUrl: '',
+        description: '',
+        style: 'Digital',
+        era: 'Part 1',
+        tags: '',
+        twitter: '',
+        instagram: ''
+      });
+      setIsUploadOpen(false);
+      
+      // Refresh the gallery
+      await fetchFanArt();
+      
+      console.log('Fan art submitted successfully!');
+    } catch (err) {
+      console.error('Failed to submit artwork profile:', err);
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Server rejected artwork submission entry.';
+      setUploadError(errorMessage);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  // Helper to render social links safely
   const renderSafeLink = (url, label) => {
     if (!url) return null;
     if (isValidHttpUrl(url)) {
@@ -263,7 +354,6 @@ const FanArtGallery = () => {
         </a>
       );
     }
-    // if invalid, return plain text (non-clickable) to avoid XSS via javascript: or data:
     return <span className="text-gray-500">{label}</span>;
   };
 
@@ -278,7 +368,12 @@ const FanArtGallery = () => {
         </p>
 
         {isAuthenticated && (
-          <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all flex items-center space-x-2 mx-auto">
+          <button 
+            onClick={() => {
+              setUploadError('');
+              setIsUploadOpen(true);
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all flex items-center space-x-2 mx-auto"          >
             <Upload className="w-5 h-5" />
             <span>Submit Your Art</span>
           </button>
@@ -397,6 +492,182 @@ const FanArtGallery = () => {
         )}
       </div>
 
+      {/* Creation Submission Portal Modal */}
+      {isUploadOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => !uploadLoading && setIsUploadOpen(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl max-w-xl w-full border border-emerald-500/30 shadow-2xl relative p-6 md:p-8 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsUploadOpen(false)}
+              disabled={uploadLoading}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-lg transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-1">
+              Share Your Artwork
+            </h2>
+            <p className="text-gray-400 text-sm mb-6">Contribute your creative entry directly to the public showcase timeline.</p>
+
+            {uploadError && (
+              <div className="p-3 mb-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">
+                {uploadError}
+              </div>
+            )}
+
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Art Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={uploadForm.title}
+                    onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                    placeholder="e.g. Desert Sandstorm"
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Artist Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={uploadForm.artistName}
+                    onChange={(e) => setUploadForm({ ...uploadForm, artistName: e.target.value })}
+                    placeholder="e.g. HanabiArts"
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Image Source URL *</label>
+                <input
+                  type="url"
+                  required
+                  value={uploadForm.imageUrl}
+                  onChange={(e) => setUploadForm({ ...uploadForm, imageUrl: e.target.value })}
+                  placeholder="https://scontent-iad3-1.cdninstagram.com/...jpg"
+                  className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Art Style</label>
+                  <select
+                    value={uploadForm.style}
+                    onChange={(e) => setUploadForm({ ...uploadForm, style: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-gray-300 focus:border-emerald-500 focus:outline-none text-sm"
+                  >
+                    <option value="Digital">Digital</option>
+                    <option value="Traditional">Traditional</option>
+                    <option value="Cosplay">Cosplay</option>
+                    <option value="3D Model">3D Model</option>
+                    <option value="Pixel Art">Pixel Art</option>
+                    <option value="Sketch">Sketch</option>
+                    <option value="Painting">Painting</option>
+                    <option value="Mixed Media">Mixed Media</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Timeline Era</label>
+                  <select
+                    value={uploadForm.era}
+                    onChange={(e) => setUploadForm({ ...uploadForm, era: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-gray-300 focus:border-emerald-500 focus:outline-none text-sm"
+                  >
+                    <option value="Part 1">Part 1</option>
+                    <option value="Shippuden">Shippuden</option>
+                    <option value="Boruto">Boruto</option>
+                    <option value="The Last">The Last</option>
+                    <option value="Original Design">Original Design</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Description</label>
+                <textarea
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                  placeholder="Optional context detailing style benchmarks, references, software used..."
+                  rows="2"
+                  className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Tags (Comma-separated)</label>
+                <input
+                  type="text"
+                  value={uploadForm.tags}
+                  onChange={(e) => setUploadForm({ ...uploadForm, tags: e.target.value })}
+                  placeholder="wind, giantfan, sandvillage"
+                  className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Twitter Handle Link</label>
+                  <input
+                    type="url"
+                    value={uploadForm.twitter}
+                    onChange={(e) => setUploadForm({ ...uploadForm, twitter: e.target.value })}
+                    placeholder="https://twitter.com/handle"
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Instagram Handle Link</label>
+                  <input
+                    type="url"
+                    value={uploadForm.instagram}
+                    onChange={(e) => setUploadForm({ ...uploadForm, instagram: e.target.value })}
+                    placeholder="https://instagram.com/handle"
+                    className="w-full px-4 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-white focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  disabled={uploadLoading}
+                  onClick={() => setIsUploadOpen(false)}
+                  className="px-5 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadLoading}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md hover:from-emerald-600 hover:to-teal-600 transition-all flex items-center space-x-2"
+                >
+                  {uploadLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <span>Publish Art</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Details Lightbox Modal Window View */}
       {selectedArt && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -414,9 +685,9 @@ const FanArtGallery = () => {
               <X className="w-6 h-6" />
             </button>
 
-            {/* Image */}
+            {/* Image Wrapper */}
             <div className="w-full bg-slate-900 flex items-center justify-center max-h-96 overflow-hidden relative group">
-              {imageErrors[selectedArt._id] ? (
+              {modalImageError ? (
                 <div className="w-full h-96 flex items-center justify-center bg-slate-900">
                   <div className="text-center">
                     <Image className="w-20 h-20 text-gray-600 mx-auto mb-4" />
@@ -426,30 +697,28 @@ const FanArtGallery = () => {
               ) : (
                 <>
                   <img
-                    src={getCorsImageUrl(selectedArt.imageUrl)}
+                    src={getCachedImageUrl(selectedArt)}
                     alt={selectedArt.title}
                     className="w-full h-full object-contain cursor-pointer"
-                    onError={() => handleImageError(selectedArt._id)}
+                    onError={() => setModalImageError(true)}
                     crossOrigin="anonymous"
                     onClick={() => {
-                      // Validate before opening external image URL to avoid javascript: or other bad schemes
                       if (isValidHttpUrl(selectedArt.imageUrl)) {
                         window.open(selectedArt.imageUrl, '_blank', 'noopener');
                       } else {
-                        // invalid URL — ignore open and warn in console
                         console.warn('Blocked opening invalid image URL:', selectedArt.imageUrl);
                       }
                     }}
                   />
                   {/* Hover hint */}
                   <div className="absolute top-4 right-4 bg-black/60 px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-sm">Click to open full image</p>
+                    <p className="text-white text-sm">Click to open original content link</p>
                   </div>
                 </>
               )}
             </div>
 
-            {/* Content */}
+            {/* Content Context Metadata Fields */}
             <div className="p-8">
               <h2 className="text-4xl font-bold text-emerald-300 mb-2">{selectedArt.title}</h2>
               <p className="text-gray-400 mb-6">by {selectedArt.artist?.name || 'Unknown Artist'}</p>
@@ -491,7 +760,7 @@ const FanArtGallery = () => {
                 </div>
               )}
 
-              {/* Stats and Social */}
+              {/* Stats and Social Actions Layout */}
               <div className="flex items-center justify-between pt-6 border-t border-emerald-500/20">
                 <div className="flex space-x-6">
                   <button
@@ -510,7 +779,7 @@ const FanArtGallery = () => {
                   </div>
                 </div>
 
-                {/* Social Links (validated) */}
+                {/* Social Handle Links */}
                 {selectedArt.artist?.socialLinks && (
                   <div className="flex space-x-4">
                     {selectedArt.artist.socialLinks.twitter &&
