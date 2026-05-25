@@ -72,4 +72,199 @@ The **Temari Fan App** is a community-driven web application built for those who
 
 --- 
 
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS, GSAP, React Router v7, Axios, Lucide React |
+| Backend | Node.js, Express 5, Mongoose 9 |
+| Database | MongoDB |
+| Auth | JWT (HTTP-only cookies), bcryptjs |
+| Email | Nodemailer + Gmail OAuth2 via Google APIs |
+| Weather | OpenWeatherMap API |
+| Image Processing | Multer, Sharp |
+| Security | Helmet.js, express-rate-limit, CORS |
+| Code Quality | ESLint, CodeRabbit |
+
+---
+
+## Project Structure
+
+```
+temari-nara-fan-application/
+│
+├── config/
+│   └── email.js              # Nodemailer + Gmail OAuth2 setup
+│
+├── middleware/
+│   └── auth.js               # JWT authenticate, isAdmin, isModerator, optionalAuthenticate
+│
+├── models/
+│   ├── FanArt.js             # Fan art submissions
+│   ├── Jutsu.js              # Jutsu entries with animation metadata
+│   ├── Report.js             # Bug reports and feature requests
+│   ├── StrategistPost.js     # Forum posts
+│   ├── Timeline.js           # Character timeline events
+│   └── User.js               # User accounts, roles
+│
+├── routes/
+│   ├── contact.routes.js     # Contact form submission + email delivery
+│   ├── fanart.routes.js      # Fan art CRUD + image upload
+│   ├── jutsu.routes.js       # Jutsu read + admin write
+│   ├── proxy.routes.js       # Proxied external API calls
+│   ├── report.routes.js      # Bug/feature report CRUD
+│   ├── strategist.routes.js  # Forum post CRUD
+│   ├── timeline.routes.js    # Timeline event CRUD
+│   ├── user.routes.js        # Auth, profile, saved content
+│   └── weather.routes.js     # OpenWeatherMap proxy
+│
+├── scripts/
+│   ├── seed.js               # Seeds jutsus and timeline events
+│   ├── fanseed.js            # Seeds fan art entries
+│   └── strategist-seed.js    # Seeds forum posts
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── effects/
+│   │   │   │   └── WindBackground.jsx   # GSAP particle wind effect
+│   │   │   └── layout/
+│   │   │       ├── Navigation.jsx
+│   │   │       └── Footer.jsx
+│   │   ├── contexts/
+│   │   │   ├── AuthContext.jsx          # Global auth state
+│   │   │   ├── ThemeContext.jsx         # Light/dark/auto theme
+│   │   │   └── WeatherContext.jsx       # Real-time weather state
+│   │   └── pages/
+│   │       ├── Home.jsx
+│   │       ├── JutsuShowcase.jsx
+│   │       ├── Timeline.jsx
+│   │       ├── FanArtGallery.jsx
+│   │       ├── StrategistCorner.jsx
+│   │       ├── Profile.jsx
+│   │       ├── Login.jsx
+│   │       ├── Register.jsx
+│   │       ├── Guidelines.jsx
+│   │       ├── ReportIssue.jsx
+│   │       └── ContactUs.jsx
+│   └── package.json
+│
+├── .env.example              # All required environment variables documented
+├── .coderabbit.yaml          # CodeRabbit AI review configuration
+├── server.js                 # Express entry point
+└── package.json
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** v18 or later
+- **npm** v9 or later
+- **MongoDB** — local instance or [MongoDB Atlas](https://www.mongodb.com/atlas) cluster
+- **OpenWeatherMap API key** — free tier at [openweathermap.org](https://openweathermap.org/api)
+- **Gmail account** with OAuth2 credentials configured (see [Email Setup](#email-setup))
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/mrbug0611/temari-nara-fan-application.git
+cd temari-nara-fan-application
+```
+
+2. **Install backend dependencies**
+
+```bash
+npm install
+```
+
+3. **Install frontend dependencies**
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### Environment Variables
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+See [`.env.example`](.env.example) for the full list of required variables. Key ones to set before running:
+
+| Variable | Description |
+|---|---|
+| `MONGODB_URI` | MongoDB connection string |
+| `JWT_SECRET` | Strong random string for signing JWTs |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap free-tier API key |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID (for email) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
+| `GOOGLE_REFRESH_TOKEN` | OAuth2 refresh token (see Email Setup below) |
+| `EMAIL_USER` | Gmail address used to send emails |
+| `ADMIN_EMAIL` | Address that receives contact form messages |
+| `FRONTEND_URL` | Frontend origin for CORS (default: `http://localhost:3000`) |
+
+#### Email Setup
+
+The app uses Gmail OAuth2 instead of app passwords. To obtain a refresh token:
+
+1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the Gmail API
+3. Create OAuth2 credentials (Web Application type)
+4. Set redirect URI to `https://developers.google.com/oauthplayground`
+5. Use the included helper script: `node get-refresh-token.js`
+6. Paste the generated token into `GOOGLE_REFRESH_TOKEN` in your `.env`
+
+### Running the App
+
+**Development** (backend only, with nodemon):
+
+```bash
+npm run dev
+```
+
+**Frontend dev server** (in a separate terminal):
+
+```bash
+cd frontend
+npm run dev
+```
+
+The backend runs on `http://localhost:5000` and the Vite frontend on `http://localhost:5173` by default.
+
+**Production build:**
+
+```bash
+cd frontend && npm run build
+```
+
+Serve the built `frontend/dist` folder with your chosen static host or configure Express to serve it directly.
+
+### Seeding the Database
+
+The project ships with three seed scripts to pre-populate content:
+
+```bash
+# Seed jutsus and timeline events
+npm run seed
+
+# Seed fan art entries
+npm run seed-fanart
+
+# Seed Strategist's Corner posts
+npm run seed-strategist
+```
+
+> ⚠️ Seed scripts will drop and repopulate the relevant collections. Do not run them against a production database with real user content.
+
+---
+
 
