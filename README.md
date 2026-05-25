@@ -287,3 +287,16 @@ Full API documentation is in [`docs/API.md`](docs/API.md).
 | Weather | `/api/weather` | No |
 
 ---
+
+## Authentication 
+
+The app uses **JWT tokens stored in HTTP-only cookies** to prevent XSS attacks against tokens 
+
+- `POST /api/user/register` — creates a new user and sets the auth cookie
+- `POST /api/user/login` — validates credentials and sets the auth cookie
+- `POST /api/user/logout` — clears the auth cookie
+
+Protected routes use the `authenticate` middleware, which reads from `req.cookies.token`. The `optionalAuthenticate` middleware allows routes to serve both authenticated and anonymous users with different data. 
+
+--- 
+
